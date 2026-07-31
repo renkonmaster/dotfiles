@@ -1,0 +1,24 @@
+[core]
+	editor = code --wait
+	excludesfile = /home/renkon/.config/git/ignore
+[init]
+	defaultBranch = main
+[commit]
+	gpgsign = true
+[gpg]
+	format = ssh
+[include]
+        path = ~/.gitconfig.local
+[includeIf "gitdir:~/infra/dns/"]
+	path = ~/.gitconfig-trap
+[includeIf "gitdir:~/infra/tokyotech.org/"]
+	path = ~/.gitconfig-trap
+[fetch]
+	prune = true
+[push]
+	autoSetupRemote = true
+[branch]
+	sort = -committerdate
+[alias]
+	graph = log --oneline --graph --decorate
+	sw = switch
