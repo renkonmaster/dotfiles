@@ -46,27 +46,52 @@ zshrc="$repo_root/home/.zshrc"
 
 zsh -n "$zshrc"
 
-grep -Fq 'ZSH_AUTOSUGGEST_STRATEGY=(history completion)' "$zshrc"
+test_root=$(mktemp -d)
+trap 'rm -rf "$test_root"' EXIT HUP INT TERM
 
-activation_count=$(grep -c 'mise activate zsh' "$zshrc" || true)
-if [ "$activation_count" -ne 1 ]; then
-  echo "expected one guarded mise activation, found $activation_count" >&2
+if ! output=$(
+  env -i \
+    HOME="$test_root/home-without-mise" \
+    PATH=/usr/bin:/bin \
+    TERM=dumb \
+    zsh -dfc '
+      source "$1"
+      [[ "${(j: :)ZSH_AUTOSUGGEST_STRATEGY}" == "history completion" ]]
+    ' zsh "$zshrc" 2>&1
+); then
+  printf '%s\n' "$output" >&2
+  echo "compatibility zsh failed without optional user tools" >&2
   exit 1
 fi
 
-minimal_home=$(mktemp -d)
-trap 'rm -rf "$minimal_home"' EXIT HUP INT TERM
+mkdir -p "$test_root/bin" "$test_root/home-with-mise"
+printf '0\n' >"$test_root/mise-count"
 
-output=$(
-  env -i \
-    HOME="$minimal_home" \
-    PATH=/usr/bin:/bin \
-    TERM=dumb \
-    zsh -dfc "source '$zshrc'" 2>&1
-)
+cat >"$test_root/bin/mise" <<'STUB'
+#!/bin/sh
+set -eu
 
-if printf '%s\n' "$output" | grep -Fq 'command not found: mise'; then
-  printf '%s\n' "$output" >&2
+test "$#" -eq 2
+test "$1" = activate
+test "$2" = zsh
+
+count=$(cat "$MISE_COUNT_FILE")
+count=$((count + 1))
+printf '%s\n' "$count" >"$MISE_COUNT_FILE"
+printf 'typeset -gx MISE_SHELL=zsh\n'
+STUB
+chmod +x "$test_root/bin/mise"
+
+env -i \
+  HOME="$test_root/home-with-mise" \
+  MISE_COUNT_FILE="$test_root/mise-count" \
+  PATH="$test_root/bin:/usr/bin:/bin" \
+  TERM=dumb \
+  zsh -dfc 'source "$1"' zsh "$zshrc"
+
+mise_count=$(cat "$test_root/mise-count")
+if [ "$mise_count" -ne 1 ]; then
+  echo "expected mise activation once, observed $mise_count calls" >&2
   exit 1
 fi
 ```
@@ -79,7 +104,9 @@ Run:
 sh tests/check-compat-zsh.sh
 ```
 
-Expected: FAIL because committed `home/.zshrc` lacks the approved autosuggestion strategy. If the current working-tree diff was copied into the isolated worktree, it also fails because two `mise activate zsh` calls are present and a minimal environment reports `command not found: mise`.
+Expected: FAIL with `compatibility zsh failed without optional user tools`
+because the runtime autosuggestion strategy is absent. A version containing the
+user's duplicate final activation instead fails with two observed mise calls.
 
 - [ ] **Step 3: Implement the minimal compatibility fix**
 

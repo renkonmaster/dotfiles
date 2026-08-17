@@ -8,7 +8,9 @@ export ZSH="$HOME/.oh-my-zsh"
 # Disable automatic update prompts for smooth startup
 zstyle ':omz:update' mode disabled
 
-ZSH_THEME="robbyrussell"
+ZSH_THEME=""
+
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
 plugins=(
 	git
