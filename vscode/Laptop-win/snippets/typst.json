@@ -1,0 +1,43 @@
+{
+  "Typst Report Template": {
+    "scope": "typst",
+    "prefix": "report",
+    "body": [
+      "#import \"@local/template:0.1.0\": *",
+      "",
+      "#show: config.with(",
+      "  paper: \"a4\",",
+      "  fontsize: 10pt,",
+      "  lines-per-page: auto,",
+      "  numbering-headings: \"1.1.1\",",
+      "  cols: 1,",
+      "  all-display-style: true,",
+      "  show-header: false,",
+      "  author: \"${1:author}\",",
+      "  id: \"${2:student-id}\",",
+      "  show_chapter_in_header: false,",
+      ")",
+      "#maketitle(",
+      "  title: \"${3:title}\",",
+      "  author: \"${1:author}\",",
+      "  id: \"${2:student-id}\",",
+      "  type: 1,",
+      "  abstract: [${4:abstract}],",
+      ")",
+      "#pagebreak()",
+      "$0"
+    ],
+    "description": "@local/template:0.1.0 が必要なTypst日本語レポートテンプレート"
+  },
+  "Typst Figure": {
+    "scope": "typst",
+    "prefix": "fig",
+    "body": [
+      "#figure(",
+      "  image(\"${1:path}\", width: 80%),",
+      "  caption: \"${2:caption}\",",
+      ")"
+    ],
+    "description": "キャプション付き画像を挿入"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "workbench.startupEditor": "none",
+  "workbench.editor.enablePreview": false,
+  "editor.renderWhitespace": "all",
+  "files.trimTrailingWhitespace": true,
+  "files.autoSave": "afterDelay",
+  "editor.stickyScroll.enabled": false,
+  "terminal.integrated.stickyScroll.enabled": false,
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
+  "git.confirmSync": false,
+  "git.suggestSmartCommit": false,
+  "remote.autoForwardPorts": false,
+  "workbench.colorTheme": "Pastel",
+  "workbench.preferredHighContrastLightColorTheme": "Default High Contrast",
+  "editor.tokenColorCustomizations": {
+    "comments": "#77DD77"
+  },
+  "workbench.colorCustomizations": {
+    "editorBracketHighlight.foreground1": "#d06293",
+    "editorBracketHighlight.foreground2": "#f3cb76",
+    "editorBracketHighlight.foreground3": "#5081eb",
+    "editorBracketHighlight.foreground4": "#5be7a1",
+    "editorBracketHighlight.foreground5": "#a908f3",
+    "editorBracketHighlight.foreground6": "#f56b2c"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "chat.tips.enabled": false,
+  "chat.viewSessions.orientation": "stacked",
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "[typst]": {
+    "editor.defaultFormatter": "myriad-dreamin.tinymist"
+  },
+  "[snippets]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": true,
+    "scminput": false
+  },
+  "workbench.iconTheme": "vscode-icons",
+  "githubPullRequests.pullBranch": "never",
+  "update.showReleaseNotes": false,
+  "gitlens.ai.model": "vscode",
+  "gitlens.ai.vscode.model": "copilot:gpt-4.1",
+  "markdown.marp.browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "markdown.marp.openExportedHtmlInIntegratedBrowser": "window",
+  "markdown.marp.browser": "chrome",
+  "chatgpt.reviewDelivery": "inline"
+}

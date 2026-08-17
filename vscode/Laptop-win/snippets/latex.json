@@ -1,0 +1,65 @@
+{
+  "LaTeX Report": {
+    "scope": "latex",
+    "prefix": "report",
+    "body": [
+      "\\documentclass[${1:a4paper,11pt}]{${2:jsarticle}}",
+      "",
+      "\\usepackage{amsmath,amsfonts}",
+      "\\usepackage{bm}",
+      "\\usepackage[dvipdfmx]{graphicx}",
+      "",
+      "\\begin{document}",
+      "\\title{${3}}",
+      "\\author{${4}}",
+      "\\date{${5:\\today}}",
+      "\\maketitle",
+      "",
+      "$0",
+      "",
+      "\\end{document}"
+    ],
+    "description": "授業レポート用テンプレート"
+  },
+  "Physics Report": {
+    "scope": "latex",
+    "prefix": "physics",
+    "body": [
+      "\\documentclass[a4paper,12pt,dvipdfmx]{jsarticle}",
+      "",
+      "\\usepackage[dvipdfmx]{graphicx,xcolor}",
+      "\\usepackage{tikz}",
+      "\\usepackage{amsmath,amssymb}",
+      "\\usepackage{bm}",
+      "\\usepackage{geometry}",
+      "\\usepackage{mathtools}",
+      "\\usepackage{enumerate}",
+      "\\geometry{top=25mm,bottom=25mm,left=25mm,right=25mm}",
+      "",
+      "\\title{${1:物理演習レポート}}",
+      "\\author{氏名: ${2:author} \\\\ 学籍番号: ${3:student-id}}",
+      "\\date{\\today}",
+      "",
+      "\\begin{document}",
+      "\\maketitle",
+      "",
+      "$0",
+      "",
+      "\\end{document}"
+    ],
+    "description": "物理演習レポート用テンプレート"
+  },
+  "Figure": {
+    "scope": "latex",
+    "prefix": "fig",
+    "body": [
+      "\\begin{figure}[htbp]",
+      "    \\centering",
+      "    \\includegraphics[width=${1:\\linewidth}]{${2:figure.png}}",
+      "    \\caption{${3:キャプション}}",
+      "    \\label{fig:${4:label}}",
+      "\\end{figure}"
+    ],
+    "description": "図の挿入テンプレート"
+  }
+}

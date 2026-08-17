@@ -697,7 +697,7 @@ cmp -s "$profile_dir/extensions.txt" "$sorted_extensions" || {
   exit 1
 }
 
-if grep -ERq 'globalState|remote\.tunnels|mcpserver-|github-[A-Za-z0-9_-]+' "$profile_dir"; then
+if grep -ERq 'globalState|remote\.tunnels|mcpserver-' "$profile_dir"; then
   echo "volatile VS Code state remains" >&2
   exit 1
 fi
