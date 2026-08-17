@@ -573,27 +573,28 @@ repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 gitconfig="$repo_root/home/.gitconfig"
 starship_config="$repo_root/config/starship.toml"
 
+test_home=$(mktemp -d)
+trap 'rm -rf "$test_home"' EXIT HUP INT TERM
+
 git config --file "$gitconfig" --list >/dev/null
 
-excludes_file=$(git config --file "$gitconfig" --get core.excludesfile)
-test "$excludes_file" = '~/.config/git/ignore' || {
-  echo "core.excludesfile must be home-relative" >&2
+excludes_file=$(
+  HOME="$test_home" git config --file "$gitconfig" --path --get core.excludesfile
+)
+test "$excludes_file" = "$test_home/.config/git/ignore" || {
+  echo "core.excludesfile did not resolve relative to HOME" >&2
   exit 1
 }
 
-include_file=$(git config --file "$gitconfig" --get include.path)
-test "$include_file" = '~/.gitconfig.local' || {
-  echo "local Git include was not preserved" >&2
+include_file=$(
+  HOME="$test_home" git config --file "$gitconfig" --path --get include.path
+)
+test "$include_file" = "$test_home/.gitconfig.local" || {
+  echo "local Git include did not resolve relative to HOME" >&2
   exit 1
 }
 
 STARSHIP_CONFIG="$starship_config" starship print-config >/dev/null
-
-palette_count=$(grep -c '^\[palettes\.catppuccin_' "$starship_config")
-test "$palette_count" -eq 1 || {
-  echo "expected one Starship palette, found $palette_count" >&2
-  exit 1
-}
 ```
 
 - [ ] **Step 2: Run the test and verify RED**
@@ -604,7 +605,7 @@ Run:
 sh tests/check-shared-config.sh
 ```
 
-Expected: FAIL because `core.excludesfile` is an absolute path and four Catppuccin palettes are defined.
+Expected: FAIL because `core.excludesfile` is an absolute path.
 
 - [ ] **Step 3: Make the Git path portable**
 

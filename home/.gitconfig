@@ -1,6 +1,6 @@
 [core]
 	editor = code --wait
-	excludesfile = /home/renkon/.config/git/ignore
+	excludesfile = ~/.config/git/ignore
 [init]
 	defaultBranch = main
 [commit]
