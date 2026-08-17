@@ -41,7 +41,7 @@ Create `tests/check-compat-zsh.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 zshrc="$repo_root/home/.zshrc"
 
 zsh -n "$zshrc"
@@ -174,7 +174,7 @@ Create `tests/check-nix-layout.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo_root"
 
 for file in \
@@ -321,7 +321,7 @@ Create `tests/check-home-manager-zsh.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo_root"
 
 generation=$(
@@ -329,9 +329,14 @@ generation=$(
     .#homeConfigurations.renkon.activationPackage
 )
 
+generated_zshenv="$generation/home-files/.zshenv"
 generated_zshrc="$generation/home-files/.zshrc"
 managed_zsh="$generation/home-path/bin/zsh"
 
+test -s "$generated_zshenv" || {
+  echo "Home Manager did not generate .zshenv" >&2
+  exit 1
+}
 test -s "$generated_zshrc" || {
   echo "Home Manager did not generate .zshrc" >&2
   exit 1
@@ -343,16 +348,24 @@ test -x "$managed_zsh" || {
 
 test_home=$(mktemp -d)
 trap 'rm -rf "$test_home"' EXIT HUP INT TERM
-ln -s "$generated_zshrc" "$test_home/.zshrc"
 
-output=$(
+if ! output=$(
   env -i \
     HOME="$test_home" \
-    ZDOTDIR="$test_home" \
     PATH=/usr/bin:/bin \
     TERM=dumb \
-    "$managed_zsh" -d -i -c 'print -r -- HM_ZSH_OK' 2>&1
-)
+    "$managed_zsh" -dfc '
+      source "$1"
+      ZSH_CACHE_DIR="$HOME/.cache/oh-my-zsh"
+      source "$2"
+      [[ "${(j: :)ZSH_AUTOSUGGEST_STRATEGY}" == "history completion" ]]
+      [[ "$(alias gemini)" == "gemini=agy" ]]
+      print -r -- HM_ZSH_OK
+    ' zsh "$generated_zshenv" "$generated_zshrc" 2>&1
+); then
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
 
 printf '%s\n' "$output" | grep -Fq HM_ZSH_OK
 
@@ -430,6 +443,8 @@ Create `config/zsh/init.zsh`:
 
 ```zsh
 # Custom integrations appended to the Home Manager-generated ~/.zshrc.
+
+setopt HIST_REDUCE_BLANKS
 
 typeset -U path PATH
 
@@ -554,7 +569,7 @@ Create `tests/check-shared-config.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 gitconfig="$repo_root/home/.gitconfig"
 starship_config="$repo_root/config/starship.toml"
 
@@ -652,7 +667,7 @@ Create `tests/check-vscode.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 profile_dir="$repo_root/vscode/Laptop-win"
 
 test ! -e "$repo_root/.vscode/Laptop-win.code-profile" || {
@@ -1008,7 +1023,7 @@ Create `tests/check-secrets.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 
 patterns='gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY'
 
@@ -1026,7 +1041,7 @@ Create `tests/check.sh`:
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 
 for check in "$repo_root"/tests/check-*.sh; do
   printf 'running %s\n' "${check##*/}"
