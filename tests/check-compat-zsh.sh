@@ -4,8 +4,9 @@ set -eu
 
 repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 zshrc="$repo_root/home/.zshrc"
+zsh_bin=$(command -v zsh)
 
-zsh -n "$zshrc"
+"$zsh_bin" -n "$zshrc"
 
 test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT HUP INT TERM
@@ -15,10 +16,10 @@ if ! output=$(
     HOME="$test_root/home-without-mise" \
     PATH=/usr/bin:/bin \
     TERM=dumb \
-    zsh -dfc '
+    "$zsh_bin" -dfc '
       source "$1"
       [[ "${(j: :)ZSH_AUTOSUGGEST_STRATEGY}" == "history completion" ]]
-    ' zsh "$zshrc" 2>&1
+    ' "$zsh_bin" "$zshrc" 2>&1
 ); then
   printf '%s\n' "$output" >&2
   echo "compatibility zsh failed without optional user tools" >&2
@@ -48,7 +49,7 @@ env -i \
   MISE_COUNT_FILE="$test_root/mise-count" \
   PATH="$test_root/bin:/usr/bin:/bin" \
   TERM=dumb \
-  zsh -dfc 'source "$1"' zsh "$zshrc"
+  "$zsh_bin" -dfc 'source "$1"' "$zsh_bin" "$zshrc"
 
 mise_count=$(cat "$test_root/mise-count")
 if [ "$mise_count" -ne 1 ]; then
