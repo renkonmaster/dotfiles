@@ -4,6 +4,7 @@ _:
   imports = [
     ./modules/dotfiles.nix
     ./modules/git.nix
+    ./modules/mise.nix
     ./modules/zsh.nix
   ];
 

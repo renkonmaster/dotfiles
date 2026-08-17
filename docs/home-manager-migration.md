@@ -35,6 +35,7 @@ managed_files=(
   .cache/.keep
   .cache/oh-my-zsh/.keep
   .config/environment.d/10-home-manager.conf
+  .config/mise/config.toml
   .config/starship.toml
   .config/systemd/user/tray.target
   .gitconfig
@@ -95,7 +96,8 @@ nix run .#home-manager -- \
 
 `.#home-manager` は、この構成と同じ `flake.lock` に固定された Home Manager
 入力から提供されます。そのため、初回適用に使う CLI と構成側の Home Manager
-の版がずれません。
+の版がずれません。適用時には `modules/mise.nix` のツール一覧に対して
+`mise install --yes` も実行されます。
 
 適用後は、開いたままの復旧用ターミナルを残して新しい WSL ターミナルを開き、
 Zsh の起動、補完、mise、Starship、Git 設定を確認します。問題がなければ、
@@ -131,7 +133,8 @@ WSL ディストリビューション名が `Ubuntu` でない場合は、`wsl.e
   `/usr/bin/zsh` なら変更不要です。
 - 互換用 `.bashrc` やリポジトリへの直接リンクの削除は、Zsh と Home Manager
   の動作確認後に別作業として行います。
-- Node.js、Go、Starship などのツールは引き続き mise で更新します。
+- Node.js、Go、Starship などのツールは mise で管理し、Home Manager 適用時に
+  不足バージョンを自動インストールします。
 
 この手順では、Home Manager の初回適用以外にログインシェルや WSL 設定を
 変更しません。

@@ -48,10 +48,6 @@ count=$((count + 1))
 printf '%s\n' "$count" >"$count_file"
 
 case "$name" in
-  mise)
-    test "$*" = 'activate zsh'
-    printf '%s\n' 'typeset -gx MISE_SHELL=zsh'
-    ;;
   fzf)
     test "$*" = '--zsh'
     printf '%s\n' 'typeset -gx DOTFILES_FZF_TEST=1'
@@ -96,12 +92,12 @@ exec env -i \
   ZDOTDIR="$ISOLATED_HOME/zdotdir" \
   "$SHELL_PATH" -lic '
     [[ $DOTFILES_ZSHRC_TEST_COMPLETE == 1 ]]
+    [[ $MISE_SHELL == zsh ]]
     [[ "${(j: :)ZSH_AUTOSUGGEST_STRATEGY}" == "history completion" ]]
     [[ "$(alias gemini)" == "gemini=agy" ]]
     [[ ":$PATH:" == *":$HOME/.cargo/bin:"* ]]
 
     if [[ $EXPECT_OPTIONAL_HOOKS == 1 ]]; then
-      [[ $MISE_SHELL == zsh ]]
       [[ $DOTFILES_FZF_TEST == 1 ]]
       [[ $DOTFILES_ZOXIDE_TEST == 1 ]]
       [[ $DOTFILES_STARSHIP_TEST == 1 ]]
@@ -129,7 +125,7 @@ prepare_home() {
 
   if [ "$with_optional_hooks" -eq 1 ]; then
     mkdir -p "$isolated_home/.local/bin"
-    for command in mise fzf zoxide starship direnv; do
+    for command in fzf zoxide starship direnv; do
       ln -s "$optional_hook" "$isolated_home/.local/bin/$command"
     done
   fi
@@ -190,7 +186,7 @@ if [ "$system_zsh_runs" -eq 1 ]; then
 fi
 
 expected_hook_count=$((1 + system_zsh_runs))
-for command in mise fzf zoxide starship direnv; do
+for command in fzf zoxide starship direnv; do
   count=$(cat "$test_root/hook-counts/$command")
   test "$count" -eq "$expected_hook_count" || {
     echo "expected $command hook $expected_hook_count times, observed $count" >&2

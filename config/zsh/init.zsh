@@ -32,10 +32,6 @@ elif command -v xsel >/dev/null 2>&1; then
     alias clip='xsel --clipboard --input'
 fi
 
-if [[ ${MISE_SHELL:-} != zsh ]] && command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh)"
-fi
-
 if command -v fzf >/dev/null 2>&1; then
     if __dotfiles_fzf_init=$(fzf --zsh 2>/dev/null); then
         eval "$__dotfiles_fzf_init"

@@ -8,6 +8,7 @@ for file in \
   flake.lock \
   modules/dotfiles.nix \
   modules/git.nix \
+  modules/mise.nix \
   modules/zsh.nix
 do
   test -s "$file" || {
@@ -20,6 +21,7 @@ nix-instantiate --parse flake.nix >/dev/null
 nix-instantiate --parse home.nix >/dev/null
 nix-instantiate --parse modules/dotfiles.nix >/dev/null
 nix-instantiate --parse modules/git.nix >/dev/null
+nix-instantiate --parse modules/mise.nix >/dev/null
 nix-instantiate --parse modules/zsh.nix >/dev/null
 
 nix flake metadata --no-write-lock-file >/dev/null
