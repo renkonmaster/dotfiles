@@ -213,7 +213,7 @@ Expected: FAIL with `missing required file: flake.lock`.
 Replace `home.nix` with:
 
 ```nix
-{ ... }:
+_:
 
 {
   imports = [
@@ -240,7 +240,7 @@ Replace `home.nix` with:
 Create `modules/dotfiles.nix`:
 
 ```nix
-{ ... }:
+_:
 
 {
   # Kept during migration because the live ~/.aliases link still targets it.
@@ -254,7 +254,7 @@ Create `modules/dotfiles.nix`:
 Create `modules/git.nix`:
 
 ```nix
-{ ... }:
+_:
 
 {
   # Identity and signing-key values remain in ~/.gitconfig.local.
@@ -265,7 +265,7 @@ Create `modules/git.nix`:
 Create the initial `modules/zsh.nix`:
 
 ```nix
-{ ... }:
+_:
 
 { }
 ```
