@@ -1004,7 +1004,7 @@ git commit -m "refactor: make VS Code profile declarative"
 ### Task 6: Repository Checks, CI, and Migration Documentation
 
 **Files:**
-- Create: `.gitignore`
+- Modify: `.gitignore`
 - Create: `tests/check-secrets.sh`
 - Create: `tests/check.sh`
 - Create: `.github/workflows/check.yml`
@@ -1048,6 +1048,15 @@ for check in "$repo_root"/tests/check-*.sh; do
   printf 'running %s\n' "${check##*/}"
   sh "$check"
 done
+
+printf 'running shellcheck\n'
+shellcheck "$repo_root"/tests/*.sh
+
+printf 'running statix\n'
+statix check "$repo_root"
+
+printf 'running deadnix\n'
+deadnix --fail "$repo_root"
 ```
 
 Run:
@@ -1056,13 +1065,17 @@ Run:
 sh tests/check.sh
 ```
 
-Expected: FAIL before the dev shell/flake checks and final documentation are integrated, or expose any task-specific gap that must be fixed before continuing.
+Expected: existing task-specific checks pass. The complete Nix/CI integration is
+verified after the flake and documentation changes below.
 
 - [ ] **Step 2: Add repository-local ignore rules**
 
 Create `.gitignore`:
 
 ```gitignore
+# Isolated implementation worktrees
+.worktrees/
+
 # Nix build links
 result
 result-*
@@ -1194,7 +1207,7 @@ to keep an existing terminal open, check backup-name collisions, and run only
 after reviewing the built configuration:
 
 ```bash
-for file in .zshrc .gitconfig .aliases; do
+for file in .zshrc .gitconfig .aliases .config/starship.toml; do
   test ! -e "$HOME/$file.pre-home-manager" || {
     echo "backup already exists: $HOME/$file.pre-home-manager" >&2
     exit 1

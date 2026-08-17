@@ -1,2 +1,12 @@
 # Isolated implementation worktrees
 .worktrees/
+
+# Nix build links
+result
+result-*
+
+# Local development environments
+.direnv/
+
+# Generated analysis artifacts
+graphify-out/
