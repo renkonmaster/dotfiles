@@ -21,24 +21,72 @@ nix build --no-link .#homeConfigurations.renkon.activationPackage
 これらは構成を評価・ビルドするだけで、`~/.zshrc`、ログインシェル、
 既存のシンボリックリンクを変更しません。
 
-初回適用では、既存ファイルを `.pre-home-manager` という名前へ退避します。
-同名のバックアップが既にあると上書きの危険があるため、先に確認します。
+生成物には、明示的に指定した `.zshrc` だけでなく `.zshenv` と `.zprofile` も
+含まれます。現在の `.zshenv` が行っていた Cargo の PATH 追加は
+`home.sessionPath` へ移行済みです。元のファイル自体は復旧用に退避します。
+
+`switch -b` は通常ファイルを退避できますが、Home Manager 以外が作った既存の
+シンボリックリンクは退避しません。そのため、生成される全ファイルを次の一覧で
+管理し、先に `.pre-home-manager` へ明示的に移します。
 
 ```zsh
-for file in .zshrc .gitconfig .aliases .config/starship.toml; do
-  test ! -e "$HOME/$file.pre-home-manager" || {
-    echo "backup already exists: $HOME/$file.pre-home-manager" >&2
-    exit 1
-  }
+managed_files=(
+  .aliases
+  .cache/.keep
+  .cache/oh-my-zsh/.keep
+  .config/environment.d/10-home-manager.conf
+  .config/starship.toml
+  .config/systemd/user/tray.target
+  .gitconfig
+  .local/state/.keep
+  .zprofile
+  .zshenv
+  .zshrc
+)
+
+for file in $managed_files; do
+  current="$HOME/$file"
+  backup="$current.pre-home-manager"
+
+  if [[ -e "$current" || -L "$current" ]]; then
+    if [[ -e "$backup" || -L "$backup" ]]; then
+      echo "backup already exists: $backup" >&2
+      exit 1
+    fi
+    printf 'will back up: %s -> %s\n' "$current" "$backup"
+  fi
 done
+
+unset current backup file
 ```
 
-何か表示されて終了した場合は適用せず、既存バックアップの内容と用途を確認して
-ください。自動では削除しません。
+`backup already exists` と表示された場合は適用せず、既存バックアップの内容と
+用途を確認してください。`will back up` は、次の手順で移動する対象の一覧です。
+内容に意図しないファイルがないことを確認します。
 
 ## 2. 初回だけ適用する
 
-ビルド結果と差分を確認した後、次のコマンドを手動で実行します。
+表示された対象を確認した後、同じターミナルで次の退避を行います。これは削除
+ではなく、同じディレクトリ内で名前を変更する操作です。
+
+```zsh
+for file in $managed_files; do
+  current="$HOME/$file"
+  backup="$current.pre-home-manager"
+
+  if [[ -e "$current" || -L "$current" ]]; then
+    if [[ -e "$backup" || -L "$backup" ]]; then
+      echo "backup appeared during cutover: $backup" >&2
+      exit 1
+    fi
+    mv -- "$current" "$backup"
+  fi
+done
+
+unset current backup file managed_files
+```
+
+退避がすべて成功した直後に、次の適用コマンドを手動で実行します。
 
 ```zsh
 nix run .#home-manager -- \
@@ -56,12 +104,9 @@ Zsh の起動、補完、mise、Starship、Git 設定を確認します。問題
 ## 3. 初回適用で問題が起きた場合
 
 この PC には移行前の Home Manager generation がないため、初回適用直後は
-Home Manager の世代を戻すのではなく、次のバックアップが復旧元です。
-
-- `~/.zshrc.pre-home-manager`
-- `~/.gitconfig.pre-home-manager`
-- `~/.aliases.pre-home-manager`
-- `~/.config/starship.toml.pre-home-manager`
+Home Manager の世代を戻すのではなく、`managed_files` のうち実際に存在した
+ファイルに作成された `.pre-home-manager` バックアップが復旧元です。現在の
+PC では `.zshenv` もこの対象に含まれます。
 
 通常の Zsh が開かない場合は Windows PowerShell から、設定を読まない Zsh を
 起動します。
@@ -74,10 +119,11 @@ WSL ディストリビューション名が `Ubuntu` でない場合は、`wsl.e
 確認した名前へ置き換えます。`zsh -f` は `.zshrc` を読まないため、壊れた
 起動設定を迂回できます。
 
-復旧シェルでは対象を `ls -l` で確認し、失敗した Home Manager 作成リンク
-だけを手動で取り除いて、対応する `.pre-home-manager` バックアップを元の
-名前へ戻します。対象が一致することを一つずつ確認し、自動的な一括削除は
-行いません。
+復旧シェルでは上の `managed_files` 一覧を使い、対象を `ls -l` で確認します。
+失敗した Home Manager 作成リンクだけを手動で取り除き、対応する
+`.pre-home-manager` バックアップを元の名前へ `mv` で戻します。`.zshenv` と
+`.zprofile` も確認対象です。対象が一致することを一つずつ確認し、自動的な
+一括削除は行いません。
 
 ## 4. 移行後に別途行うこと
 

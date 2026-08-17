@@ -33,6 +33,7 @@
           shellcheck
           starship
           statix
+          util-linux
           zsh
         ];
       };

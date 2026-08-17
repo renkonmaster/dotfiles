@@ -228,6 +228,7 @@ _:
     stateVersion = "24.05";
 
     sessionPath = [
+      "$HOME/.cargo/bin"
       "$HOME/.local/bin"
       "$HOME/bin"
     ];
@@ -307,6 +308,7 @@ git commit -m "refactor: split Home Manager configuration"
 **Files:**
 - Create: `tests/check-home-manager-zsh.sh`
 - Create: `config/zsh/init.zsh`
+- Create: `config/zsh/pre-compinit.zsh`
 - Modify: `modules/zsh.nix:1-5`
 
 **Interfaces:**
@@ -530,6 +532,12 @@ sh tests/check-home-manager-zsh.sh
 
 Expected: both commands exit 0. The generated config reaches `HM_ZSH_OK` with a minimal PATH and emits no missing-command/file error.
 
+Review hardening supersedes the minimal source-only harness above: the final
+test launches both the managed Zsh and `/usr/bin/zsh` as real login/interactive
+shells under a pseudo-TTY and isolated home, with optional-hook stubs both
+absent and present. `config/zsh/pre-compinit.zsh` safely shadows WSL's broken
+Docker Desktop completion link before the system-wide compinit runs.
+
 - [ ] **Step 6: Verify Home Manager did not take ownership of other tools**
 
 Run:
@@ -544,7 +552,7 @@ Expected: the Home Manager generation contains its own Zsh and Home Manager supp
 - [ ] **Step 7: Commit generated Zsh support**
 
 ```bash
-git add modules/zsh.nix config/zsh/init.zsh tests/check-home-manager-zsh.sh
+git add modules/zsh.nix config/zsh/init.zsh config/zsh/pre-compinit.zsh tests/check-home-manager-zsh.sh
 git commit -m "feat: manage zsh with Home Manager"
 ```
 
@@ -1006,8 +1014,11 @@ git commit -m "refactor: make VS Code profile declarative"
 **Files:**
 - Modify: `.gitignore`
 - Create: `tests/check-secrets.sh`
+- Create: `tests/check-ci.sh`
+- Create: `tests/check-migration.sh`
 - Create: `tests/check.sh`
 - Create: `.github/workflows/check.yml`
+- Create: `.github/dependabot.yml`
 - Create: `docs/home-manager-migration.md`
 - Modify: `flake.nix:1-24`
 - Modify: `README.md:1-44`
@@ -1128,6 +1139,7 @@ as both the user configuration and a check:
           shellcheck
           starship
           statix
+          util-linux
           zsh
         ];
       };
@@ -1158,16 +1170,17 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: DeterminateSystems/determinate-nix-action@v3.21.9
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3.21.9
       - name: Check repository configuration
         run: nix develop --command ./tests/check.sh
       - name: Build Home Manager configuration
         run: nix flake check --print-build-logs
 ```
 
-`actions/checkout@v6` and the explicitly pinned Determinate Nix action version
-were selected from their official repositories as of 2026-08-17.
+The full commit SHAs for `actions/checkout` v6 and Determinate Nix Action
+v3.21.9 were resolved from their official repositories as of 2026-08-17.
+Dependabot keeps the immutable GitHub Actions pins updateable.
 
 - [ ] **Step 5: Document the ownership model and daily workflow**
 
@@ -1206,17 +1219,46 @@ Create `docs/home-manager-migration.md` in Japanese. It must instruct the user
 to keep an existing terminal open, check backup-name collisions, and run only
 after reviewing the built configuration:
 
-```bash
-for file in .zshrc .gitconfig .aliases .config/starship.toml; do
-  test ! -e "$HOME/$file.pre-home-manager" || {
-    echo "backup already exists: $HOME/$file.pre-home-manager" >&2
-    exit 1
-  }
+```zsh
+managed_files=(
+  .aliases
+  .cache/.keep
+  .cache/oh-my-zsh/.keep
+  .config/environment.d/10-home-manager.conf
+  .config/starship.toml
+  .config/systemd/user/tray.target
+  .gitconfig
+  .local/state/.keep
+  .zprofile
+  .zshenv
+  .zshrc
+)
+
+for file in $managed_files; do
+  current="$HOME/$file"
+  backup="$current.pre-home-manager"
+  if [[ -e "$current" || -L "$current" ]]; then
+    [[ ! -e "$backup" && ! -L "$backup" ]] || exit 1
+  fi
+done
+
+# After reviewing the exact list, explicitly move every existing target.
+for file in $managed_files; do
+  current="$HOME/$file"
+  backup="$current.pre-home-manager"
+  if [[ -e "$current" || -L "$current" ]]; then
+    mv -- "$current" "$backup"
+  fi
 done
 
 nix run .#home-manager -- \
   switch -b pre-home-manager --flake .#renkon
 ```
+
+The inventory is regression-tested against every generated `home-files` leaf.
+This explicit move is required because standalone Home Manager's `-b` handling
+does not back up foreign symlinks. The existing `.zshenv` Cargo PATH behavior is
+migrated to `home.sessionPath`, while the original file remains recoverable.
 
 The local `.#home-manager` app is exposed from the same locked Home Manager
 input as the configuration, so the first-cutover CLI cannot drift from

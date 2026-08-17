@@ -31,6 +31,8 @@
       theme = "";
     };
 
+    envExtra = builtins.readFile ../config/zsh/pre-compinit.zsh;
+
     shellAliases = {
       gemini = "agy";
       ll = "ls -alF";

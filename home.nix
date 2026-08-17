@@ -13,6 +13,7 @@ _:
     stateVersion = "24.05";
 
     sessionPath = [
+      "$HOME/.cargo/bin"
       "$HOME/.local/bin"
       "$HOME/bin"
     ];
