@@ -49,7 +49,8 @@ if command -v zoxide >/dev/null 2>&1 &&
     eval "$(zoxide init zsh)"
 fi
 
-if [[ -z ${STARSHIP_SHELL:-} ]] && command -v starship >/dev/null 2>&1; then
+if (( ! ${+functions[prompt_starship_precmd]} )) &&
+    command -v starship >/dev/null 2>&1; then
     eval "$(starship init zsh)"
 fi
 

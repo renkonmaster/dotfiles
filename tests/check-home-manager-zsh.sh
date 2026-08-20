@@ -87,6 +87,7 @@ exec env -i \
   LOGNAME=renkon \
   PATH=/usr/bin:/bin \
   SHELL="$SHELL_PATH" \
+  STARSHIP_SHELL=zsh \
   TERM=xterm-256color \
   USER=renkon \
   ZDOTDIR="$ISOLATED_HOME/zdotdir" \
