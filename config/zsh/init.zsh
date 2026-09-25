@@ -1,4 +1,4 @@
-# Custom integrations appended to the Home Manager-generated ~/.zshrc.
+# Tool integrations sourced after mise activation and completion initialization.
 
 setopt HIST_REDUCE_BLANKS
 
@@ -74,6 +74,3 @@ if command -v direnv >/dev/null 2>&1; then
     eval "$(direnv hook zsh)"
 fi
 
-if [[ -r "$HOME/.zshrc.local" ]]; then
-    source "$HOME/.zshrc.local"
-fi

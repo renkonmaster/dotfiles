@@ -1,0 +1,39 @@
+# Machine setup for Ubuntu / WSL. Requires mise with bootstrap support.
+# Global runtime versions live in config/mise/config.toml.
+[bootstrap.packages]
+"apt:zsh" = "latest"
+"apt:git" = "latest"
+"apt:curl" = "latest"
+"apt:ca-certificates" = "latest"
+"apt:build-essential" = "latest"
+"apt:pkg-config" = "latest"
+"apt:libssl-dev" = "latest"
+
+[bootstrap.repos]
+"~/.local/share/dotfiles/oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git" }
+"~/.local/share/dotfiles/zsh-autosuggestions" = { url = "https://github.com/zsh-users/zsh-autosuggestions.git", ref = "v0.7.1" }
+"~/.local/share/dotfiles/fast-syntax-highlighting" = { url = "https://github.com/zdharma-continuum/fast-syntax-highlighting.git", ref = "v1.55" }
+
+[dotfiles]
+"~/.zshenv" = { source = "home/.zshenv", mode = "symlink" }
+"~/.zprofile" = { source = "home/.zprofile", mode = "symlink" }
+"~/.zshrc" = { source = "home/.zshrc", mode = "symlink" }
+"~/.aliases" = { source = "home/.aliases", mode = "symlink" }
+"~/.gitconfig" = { source = "home/.gitconfig", mode = "symlink" }
+"~/.config/starship.toml" = { source = "config/starship.toml", mode = "symlink" }
+"~/.config/mise/config.toml" = { source = "config/mise/config.toml", mode = "symlink" }
+
+[tasks.setup]
+description = "Install system packages, shell plugins, dotfiles and CLI tools"
+# Separate invocations reload the global config after dotfiles are linked.
+run = [
+  "mise bootstrap packages apply --manager apt",
+  "mise bootstrap repos apply",
+  "mise dotfiles apply",
+  "mise install --yes",
+]
+
+[tasks.check]
+description = "Run checks explicitly (never part of setup)"
+run = "sh tests/check.sh"
+tools = { jq = "latest", ripgrep = "latest", shellcheck = "latest", starship = "latest" }

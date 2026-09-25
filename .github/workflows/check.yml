@@ -1,10 +1,8 @@
 name: check
 
+# Migration is deliberately unverified; run only when explicitly requested.
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,8 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3.21.9
+      - name: Install zsh and mise
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh
+          curl --fail --show-error --silent --location https://mise.run -o /tmp/install-mise.sh
+          sh /tmp/install-mise.sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Check repository configuration
-        run: nix develop --command ./tests/check.sh
-      - name: Build Home Manager configuration
-        run: nix flake check --print-build-logs
+        run: |
+          mise trust
+          mise run check

@@ -1,92 +1,95 @@
 # dotfiles
 
-WSL2 上の Zsh と共有設定を、Nix Flake と Home Manager で再現するための
-リポジトリです。言語ランタイムや日常的な CLI の導入方法は、これまでどおり
-mise / uv を使います。
+Ubuntu / WSL2 の環境構築を mise にまとめた dotfiles です。メインシェルは zsh。
+Nix / Home Manager は不要です。mise の `bootstrap` と `dotfiles` に対応した
+バージョンを使います（設定は v2026.9.13 の公式ドキュメントを基準に作成）。
 
-## 管理方針
+**この移行版は未検証・未適用です。** テスト、構文チェック、インストール、
+シェル起動確認はまだ行っていません。CI も当面は手動実行のみです。
 
-- Home Manager: Zsh・mise 本体、各種設定ファイル
-- mise: Node.js、Go、Rust、uv、Starship、fzf、zoxide、direnv
-- uv: Python プロジェクトと Python 製ツール
-- Windows 側: VS Code 本体と GUI アプリ
+## 管理するもの
 
-Home Manager の設定を編集しても、`home-manager switch` を実行するまでは
-現在のホームディレクトリへ反映されません。このリポジトリの検証コマンドも、
-ホームディレクトリの設定やログインシェルを変更しません。
+| 対象 | 設定 |
+| --- | --- |
+| zsh・Git・ビルド依存（mise から apt を実行） | `mise.toml` の `bootstrap.packages` |
+| Oh My Zsh・autosuggestions・fast-syntax-highlighting | `mise.toml` の `bootstrap.repos` |
+| 設定ファイルのシンボリックリンク | `mise.toml` の `dotfiles` |
+| Node.js・Go・Rust・uv・Starship・eza・fzf・zoxide・direnv | `config/mise/config.toml` |
+| zsh の履歴・補完・プラグイン | `home/.zshrc` |
+| zsh の PATH・ログイン設定 | `home/.zshenv`、`home/.zprofile` |
+| CLI の起動処理・eza / clipboard alias | `config/zsh/init.zsh` |
+| Git・Starship | `home/.gitconfig`、`config/starship.toml` |
 
-## Nix と Home Manager の役割
+Python 環境と Python 製 CLI は引き続き uv を使います。Windows 側の VS Code と
+GUI アプリは Windows 側で管理します。`home/.bashrc` は任意利用の互換設定として
+残しますが、セットアップでは配置しません。
 
-- `flake.nix`: 構成の入口と、検証に使う一時的な開発環境
-- `flake.lock`: nixpkgs と Home Manager の版を固定するファイル
-- `home.nix`: ユーザー名、ホームディレクトリ、各モジュールの読み込み
-- `modules/`: Zsh・Git・mise・共有 dotfiles の宣言
-- `config/zsh/init.zsh`: Starship など外部ツールを初期化する処理
+## セットアップ（後で適用する時）
 
-`nix develop` は検証ツールを一時的な PATH に置くだけです。`nix build` は
-Nix store に構成を組み立てるだけで、`~/.zshrc` などを置き換えません。
-実際にホームディレクトリへ反映する操作は `home-manager switch` です。
+先に [mise の公式手順](https://mise.jdx.dev/getting-started.html) で、Nix に依存しない
+mise 本体をインストールし、PATH に追加します。初回の clone には Git が必要です。
+既存環境では先に [移行手順](docs/mise-migration.md) に従ってバックアップしてください。
 
-## 検証
+リポジトリ直下で実行します。
 
 ```zsh
-nix develop --command ./tests/check.sh
-nix flake check
-nix build --no-link .#homeConfigurations.renkon.activationPackage
+mise trust
+mise run setup
 ```
 
-最後のコマンドは Home Manager の activation package をビルドしますが、
-activation script を実行しないため、現在の PC には適用されません。
+`setup` は OS パッケージ、シェルプラグイン、設定リンク、CLI の順に導入します。
+apt の操作には必要に応じて sudo が使われます。ログインシェルの変更は自動では
+行いません。必要なら適用後に `chsh -s /usr/bin/zsh` を別途実行してください。
 
-## 設定を変更する
+配置先は標準の `~/.config`、プラグインは `~/.local/share/dotfiles` です。
+`XDG_CONFIG_HOME`、`MISE_CONFIG_DIR`、`MISE_GLOBAL_CONFIG_FILE`、`ZDOTDIR` を
+変更している環境では、先に `mise.toml` の配置先とシェル設定を合わせてください。
+リンクの参照先になるので、このチェックアウトは適用後も残します。
 
-- Zsh の履歴・補完・プラグイン・alias: `modules/zsh.nix`
-- mise 本体・ツール一覧・自動インストール: `modules/mise.nix`
-- Starship、fzf などの起動処理: `config/zsh/init.zsh`
-- Git 設定: `home/.gitconfig` と `modules/git.nix`
-- Starship の表示: `config/starship.toml`
-- その他の共有ファイル: `modules/dotfiles.nix`
+## 設定の更新
 
-認証情報や PC 固有設定はコミットせず、`~/.gitconfig.local` または
-`~/.zshrc.local` に置きます。Home Manager が生成する `.zshrc` は最後に
-`~/.zshrc.local` を読み込みます。
+CLI の追加・バージョン変更は `config/mise/config.toml` を編集し、リポジトリ直下で
+`mise install` を実行します。グローバル設定もこのファイルへのリンクなので、
+プロジェクト外でも同じツールを使えます。プロジェクト固有のバージョンは各
+プロジェクトの `mise.toml` で上書きできます。
 
-Home Manager は `.bashrc` を管理しません。移行完了までは互換用ファイルが
-残りますが、Zsh の設定から Bash を読み込むことはありません。
+プラグインは `mise bootstrap repos apply` で導入します。Oh My Zsh は初回 clone
+時の版を使い、通常の apply では更新しません。明示的な更新は
+`mise bootstrap repos update` で行います。タグを指定したプラグインはそのタグを
+維持するため、更新したい場合は `ref` を編集してください。
 
-## ツールを追加する
+CLI は従来の `latest` / `lts` 指定を引き継いでいます。Nix のロックと同等の
+完全なバージョン固定ではありません。今回はバージョン解決や lock 生成も未実行です。
 
-mise で管理するツールは `modules/mise.nix` の
-`programs.mise.globalConfig.tools` に追加します。
+機密情報や端末固有設定は `~/.gitconfig.local`、`~/.zshrc.local` に置きます。
+必要に応じて `~/.zshenv.local`、`~/.zprofile.local`、`~/.zsh_aliases` も読み込みます。
+SSH 署名キー、Git のユーザー情報、既存の traP 用 Git include は端末側で保持します。
 
-```nix
-programs.mise.globalConfig.tools = {
-  example = "latest";
-};
+## 検証（後で明示的に実行）
+
+```zsh
+mise run check
 ```
 
-`home-manager switch` は設定反映後に `mise install --yes` を実行するため、追加した
-ツールの不足バージョンは自動的にインストールされます。設定ファイルは Home
-Manager 管理の読み取り専用リンクなので、`mise use --global` ではなく
-`modules/mise.nix` を編集してください。
-
-Python 製 CLI は `uv tool install <package>`、プロジェクトごとの Python 依存は
-各プロジェクトの `uv` 設定で管理します。Home Manager へ追加するのは Zsh
-本体や dotfiles 側の依存だけで、mise 管理ツールを重複して追加しません。
+zsh と Git は OS 側に必要です。検証用 CLI は check タスクで mise が導入します。
+このタスクは構文チェック、隔離した HOME での zsh 起動、共有設定などを確認します。
+`setup` からは呼びません。実際の mise bootstrap、apt、プラグインのダウンロードまで
+検証するものではないため、初回適用時にはそれらの確認も別途必要です。
 
 ## VS Code
 
-Windows 側の VS Code へ拡張機能一覧を適用する場合は、リポジトリ直下で
-PowerShell から実行します。
+Windows 側の PowerShell から拡張機能を適用します。
 
 ```powershell
 Get-Content .\vscode\Laptop-win\extensions.txt |
   ForEach-Object { code --install-extension $_ }
 ```
 
-設定、キーバインド、スニペットは `vscode/Laptop-win/` に分割しています。
+設定・キーバインド・スニペットは `vscode/Laptop-win/` にあります。
 
-## 初回移行
+## mise の仕様参照
 
-初回適用は既存リンクのバックアップと復旧経路を確認してから行います。
-手順は [Home Manager 移行手順](docs/home-manager-migration.md) を参照してください。
+- [Bootstrap](https://mise.jdx.dev/bootstrap.html)
+- [Dotfiles](https://mise.jdx.dev/dotfiles.html)
+- [Git repositories](https://mise.jdx.dev/bootstrap/repos.html)
+- [apt packages](https://mise.jdx.dev/bootstrap/packages/apt.html)

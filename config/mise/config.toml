@@ -1,0 +1,11 @@
+# Shared global tools. Python environments and Python CLI tools use uv.
+[tools]
+direnv = "latest"
+eza = "latest"
+fzf = "latest"
+go = "latest"
+node = "lts"
+rust = "latest"
+starship = "latest"
+uv = "latest"
+zoxide = "latest"
