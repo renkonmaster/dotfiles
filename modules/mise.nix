@@ -10,6 +10,7 @@ in
 
     globalConfig.tools = {
       direnv = "latest";
+      eza = "latest";
       fzf = "latest";
       go = "latest";
       node = "lts";

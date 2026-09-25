@@ -24,6 +24,13 @@ if command -v dircolors >/dev/null 2>&1; then
     alias grep='grep --color=auto'
 fi
 
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza --icons=auto --group-directories-first'
+    alias ll='eza -la --icons=auto --git --group-directories-first'
+    alias la='eza -a --icons=auto --group-directories-first'
+    alias lt='eza --tree --level=2 --icons=auto'
+fi
+
 if command -v clip.exe >/dev/null 2>&1; then
     alias clip='clip.exe'
 elif command -v wl-copy >/dev/null 2>&1; then

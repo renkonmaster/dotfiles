@@ -24,7 +24,7 @@ test -x "$managed_mise" || {
   exit 1
 }
 
-for tool in direnv fzf go rust starship uv zoxide; do
+for tool in direnv eza fzf go rust starship uv zoxide; do
   grep -Fqx "$tool = \"latest\"" "$mise_config" || {
     echo "mise configuration omits $tool@latest" >&2
     exit 1
@@ -36,7 +36,7 @@ grep -Fqx 'node = "lts"' "$mise_config" || {
   exit 1
 }
 
-test "$(grep -c ' = ' "$mise_config")" -eq 8 || {
+test "$(grep -c ' = ' "$mise_config")" -eq 9 || {
   echo "mise configuration contains an unexpected tool set" >&2
   exit 1
 }
