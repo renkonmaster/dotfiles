@@ -22,7 +22,7 @@ run = "sh scripts/tools.sh upgrade"
 [tasks.check]
 description = "Check configuration and isolated shell startup"
 run = "sh tests/check.sh"
-tools = { jq = "latest", ripgrep = "latest", shellcheck = "latest", starship = "latest" }
+tools = { ripgrep = "latest", shellcheck = "latest", starship = "latest" }
 
 [tasks.integration]
 description = "Download and test the complete setup in a temporary HOME"
