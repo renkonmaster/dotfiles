@@ -1,95 +1,92 @@
 # dotfiles
 
-Ubuntu / WSL2 の環境構築を mise にまとめた dotfiles です。メインシェルは zsh。
-Nix / Home Manager は不要です。mise の `bootstrap` と `dotfiles` に対応した
-バージョンを使います（設定は v2026.9.13 の公式ドキュメントを基準に作成）。
+Ubuntu / WSL2 向けの、zsh を主に使う dotfiles です。
+CLI は mise、Python 環境と Python 製 CLI は uv で管理します。
+Nix / Home Manager は不要です。mise 2026.6.1 の通常のタスク機能を使います。
 
-**この移行版は未検証・未適用です。** テスト、構文チェック、インストール、
-シェル起動確認はまだ行っていません。CI も当面は手動実行のみです。
+## 初回セットアップ
 
-## 管理するもの
+zsh、Git、curl、ビルドに必要な OS パッケージを先に用意します。
+Ubuntu / WSL2 では次のとおりです。
 
-| 対象 | 設定 |
-| --- | --- |
-| zsh・Git・ビルド依存（mise から apt を実行） | `mise.toml` の `bootstrap.packages` |
-| Oh My Zsh・autosuggestions・fast-syntax-highlighting | `mise.toml` の `bootstrap.repos` |
-| 設定ファイルのシンボリックリンク | `mise.toml` の `dotfiles` |
-| Node.js・Go・Rust・uv・Starship・eza・fzf・zoxide・direnv | `config/mise/config.toml` |
-| zsh の履歴・補完・プラグイン | `home/.zshrc` |
-| zsh の PATH・ログイン設定 | `home/.zshenv`、`home/.zprofile` |
-| CLI の起動処理・eza / clipboard alias | `config/zsh/init.zsh` |
-| Git・Starship | `home/.gitconfig`、`config/starship.toml` |
+```sh
+sudo apt-get update
+sudo apt-get install -y zsh git curl ca-certificates build-essential pkg-config libssl-dev
+```
 
-Python 環境と Python 製 CLI は引き続き uv を使います。Windows 側の VS Code と
-GUI アプリは Windows 側で管理します。`home/.bashrc` は任意利用の互換設定として
-残しますが、セットアップでは配置しません。
+[mise の公式手順](https://mise.jdx.dev/getting-started.html)で mise 本体を導入し、
+`~/.local/bin` を PATH に追加してください。リポジトリを clone した後、その直下で：
 
-## セットアップ（後で適用する時）
-
-先に [mise の公式手順](https://mise.jdx.dev/getting-started.html) で、Nix に依存しない
-mise 本体をインストールし、PATH に追加します。初回の clone には Git が必要です。
-既存環境では先に [移行手順](docs/mise-migration.md) に従ってバックアップしてください。
-
-リポジトリ直下で実行します。
-
-```zsh
+```sh
 mise trust
 mise run setup
 ```
 
-`setup` は OS パッケージ、シェルプラグイン、設定リンク、CLI の順に導入します。
-apt の操作には必要に応じて sudo が使われます。ログインシェルの変更は自動では
-行いません。必要なら適用後に `chsh -s /usr/bin/zsh` を別途実行してください。
+CLI → zsh プラグイン → 設定ファイルのリンクの順に導入します。
+既存の設定は `.pre-mise` を付けて退避します（壊れたリンクも対象）。
+バックアップが衝突する場合はリンクを変更せず停止します。再実行は可能です。
+ホームへリンクするため、このチェックアウトは移動・削除せず残してください。
 
-配置先は標準の `~/.config`、プラグインは `~/.local/share/dotfiles` です。
-`XDG_CONFIG_HOME`、`MISE_CONFIG_DIR`、`MISE_GLOBAL_CONFIG_FILE`、`ZDOTDIR` を
-変更している環境では、先に `mise.toml` の配置先とシェル設定を合わせてください。
-リンクの参照先になるので、このチェックアウトは適用後も残します。
+新しいターミナルで確認後、必要なら `chsh -s /usr/bin/zsh` でログインシェルを変えます。
+Home Manager から移行する場合は [移行・復旧手順](docs/mise-migration.md) も参照してください。
 
-## 設定の更新
+## 手入れする場所
 
-CLI の追加・バージョン変更は `config/mise/config.toml` を編集し、リポジトリ直下で
-`mise install` を実行します。グローバル設定もこのファイルへのリンクなので、
-プロジェクト外でも同じツールを使えます。プロジェクト固有のバージョンは各
-プロジェクトの `mise.toml` で上書きできます。
+| 変更したいもの | 編集するファイル |
+| --- | --- |
+| CLI とバージョン | `config/mise/config.toml` |
+| zsh の履歴・補完・読み込み順 | `home/.zshrc` |
+| PATH | `home/.zshenv`、`config/zsh/init.zsh` |
+| eza の alias、Starship などの初期化 | `config/zsh/init.zsh` |
+| Git、Starship の設定 | `home/.gitconfig`、`config/starship.toml` |
+| zsh プラグインの取得先と固定版 | `scripts/plugins.sh` の末尾3行 |
+| 配置するファイル | `scripts/link.sh` の末尾の一覧 |
+| 作業コマンド | `mise.toml` |
 
-プラグインは `mise bootstrap repos apply` で導入します。Oh My Zsh は初回 clone
-時の版を使い、通常の apply では更新しません。明示的な更新は
-`mise bootstrap repos update` で行います。タグを指定したプラグインはそのタグを
-維持するため、更新したい場合は `ref` を編集してください。
-
-CLI は従来の `latest` / `lts` 指定を引き継いでいます。Nix のロックと同等の
-完全なバージョン固定ではありません。今回はバージョン解決や lock 生成も未実行です。
-
-機密情報や端末固有設定は `~/.gitconfig.local`、`~/.zshrc.local` に置きます。
-必要に応じて `~/.zshenv.local`、`~/.zprofile.local`、`~/.zsh_aliases` も読み込みます。
-SSH 署名キー、Git のユーザー情報、既存の traP 用 Git include は端末側で保持します。
-
-## 検証（後で明示的に実行）
-
-```zsh
-mise run check
+```sh
+mise run install  # ツール一覧を編集した後、不足分を導入
+mise run update   # latest / lts などの指定範囲で CLI を更新
+mise run plugins  # プラグインの固定版を編集した後、取得・切り替え
+mise run link     # 設定リンクだけを配置
+mise run check    # テストと ShellCheck
 ```
 
-zsh と Git は OS 側に必要です。検証用 CLI は check タスクで mise が導入します。
-このタスクは構文チェック、隔離した HOME での zsh 起動、共有設定などを確認します。
-`setup` からは呼びません。実際の mise bootstrap、apt、プラグインのダウンロードまで
-検証するものではないため、初回適用時にはそれらの確認も別途必要です。
+CLI の `latest` / `lts` は以前の指定を引き継いでいます。完全な版固定が必要なら
+ツール一覧で具体的なバージョンを指定してください。プラグインは固定し、
+シェル起動時のダウンロードや自動更新は行いません。プラグインの取得先にローカル変更が
+あれば停止します。変更は通常 `.zshrc.local` に置いてください。
+
+`config/mise/config.toml` がグローバル設定へリンクされるので、別ディレクトリでも
+同じ CLI を利用できます。プロジェクト固有の版は各プロジェクトの `mise.toml` で
+上書きします。非対話スクリプトでは `mise exec -- <command>` を使ってください。
+
+## 個人・端末固有の設定
+
+Git の名前・メール・署名鍵は `~/.gitconfig.local`、zsh の上書きは
+`~/.zshrc.local` に置きます。後者はプラグインと CLI の初期化後、最後に読みます。
+`~/.zshenv.local`、`~/.zprofile.local`、`~/.zsh_aliases` も利用できます。
+これらのファイルはセットアップで変更しません。
+
+`XDG_CONFIG_HOME` / `XDG_DATA_HOME` / `XDG_CACHE_HOME` に対応しています。
+mise 設定の配置先は `MISE_GLOBAL_CONFIG_FILE` / `MISE_CONFIG_DIR` でも指定できます。
+zsh の起動ファイルはホーム直下です。別の `ZDOTDIR` はこの構成では使いません。
+互換用 `home/.bashrc` は残しますが自動配置しません。
+
+## 検証
+
+`mise run check` は隔離 HOME で、リンクの退避・再実行、zsh の履歴設定・
+プラグインとローカル設定の読み込み順を確認します。検証用の jq・ripgrep・
+ShellCheck・Starship は mise が導入します。zsh と Git は OS 側のものを使います。
+実プラグインを含むセットアップの確認は `mise run integration` で行えます。
+これは一時 HOME に CLI をダウンロードするため時間とディスク容量が必要です。
+GitHub Actions は PR・main 更新時に `check` を実行します。
 
 ## VS Code
 
-Windows 側の PowerShell から拡張機能を適用します。
+Windows 側の設定・キーバインド・スニペットは `vscode/Laptop-win/` にあります。
+PowerShell から拡張機能を適用する場合：
 
 ```powershell
 Get-Content .\vscode\Laptop-win\extensions.txt |
   ForEach-Object { code --install-extension $_ }
 ```
-
-設定・キーバインド・スニペットは `vscode/Laptop-win/` にあります。
-
-## mise の仕様参照
-
-- [Bootstrap](https://mise.jdx.dev/bootstrap.html)
-- [Dotfiles](https://mise.jdx.dev/dotfiles.html)
-- [Git repositories](https://mise.jdx.dev/bootstrap/repos.html)
-- [apt packages](https://mise.jdx.dev/bootstrap/packages/apt.html)

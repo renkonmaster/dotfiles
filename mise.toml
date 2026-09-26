@@ -1,39 +1,29 @@
-# Machine setup for Ubuntu / WSL. Requires mise with bootstrap support.
-# Global runtime versions live in config/mise/config.toml.
-[bootstrap.packages]
-"apt:zsh" = "latest"
-"apt:git" = "latest"
-"apt:curl" = "latest"
-"apt:ca-certificates" = "latest"
-"apt:build-essential" = "latest"
-"apt:pkg-config" = "latest"
-"apt:libssl-dev" = "latest"
-
-[bootstrap.repos]
-"~/.local/share/dotfiles/oh-my-zsh" = { url = "https://github.com/ohmyzsh/ohmyzsh.git" }
-"~/.local/share/dotfiles/zsh-autosuggestions" = { url = "https://github.com/zsh-users/zsh-autosuggestions.git", ref = "v0.7.1" }
-"~/.local/share/dotfiles/fast-syntax-highlighting" = { url = "https://github.com/zdharma-continuum/fast-syntax-highlighting.git", ref = "v1.55" }
-
-[dotfiles]
-"~/.zshenv" = { source = "home/.zshenv", mode = "symlink" }
-"~/.zprofile" = { source = "home/.zprofile", mode = "symlink" }
-"~/.zshrc" = { source = "home/.zshrc", mode = "symlink" }
-"~/.aliases" = { source = "home/.aliases", mode = "symlink" }
-"~/.gitconfig" = { source = "home/.gitconfig", mode = "symlink" }
-"~/.config/starship.toml" = { source = "config/starship.toml", mode = "symlink" }
-"~/.config/mise/config.toml" = { source = "config/mise/config.toml", mode = "symlink" }
-
+# Run from this checkout. Runtime versions live in config/mise/config.toml.
 [tasks.setup]
-description = "Install system packages, shell plugins, dotfiles and CLI tools"
-# Separate invocations reload the global config after dotfiles are linked.
-run = [
-  "mise bootstrap packages apply --manager apt",
-  "mise bootstrap repos apply",
-  "mise dotfiles apply",
-  "mise install --yes",
-]
+description = "Install tools and zsh plugins, then link dotfiles (with backups)"
+run = ["sh scripts/tools.sh install", "sh scripts/plugins.sh", "sh scripts/link.sh"]
+
+[tasks.link]
+description = "Link configuration files; preserve existing files as .pre-mise"
+run = "sh scripts/link.sh"
+
+[tasks.plugins]
+description = "Install the pinned zsh plugins"
+run = "sh scripts/plugins.sh"
+
+[tasks.install]
+description = "Install tools declared in config/mise/config.toml"
+run = "sh scripts/tools.sh install"
+
+[tasks.update]
+description = "Upgrade CLI tools within the configured versions"
+run = "sh scripts/tools.sh upgrade"
 
 [tasks.check]
-description = "Run checks explicitly (never part of setup)"
+description = "Check configuration and isolated shell startup"
 run = "sh tests/check.sh"
 tools = { jq = "latest", ripgrep = "latest", shellcheck = "latest", starship = "latest" }
+
+[tasks.integration]
+description = "Download and test the complete setup in a temporary HOME"
+run = "sh tests/integration.sh"

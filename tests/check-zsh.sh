@@ -2,6 +2,12 @@
 # shellcheck disable=SC2016 # The single-quoted program is evaluated by Zsh.
 set -eu
 
+# ZLE integrations need a terminal, including in CI.
+if [ ! -t 0 ]; then
+  export DOTFILES_ZSH_TEST="$0"
+  exec script -qec 'sh "$DOTFILES_ZSH_TEST"' /dev/null
+fi
+
 repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 zsh_bin=$(command -v zsh)
 test_root=$(mktemp -d)
@@ -21,7 +27,7 @@ env -i HOME="$test_root/minimal" PATH=/usr/bin:/bin TERM=dumb \
     [[ -o sharehistory && -o histignorealldups && -o histignorespace ]] || exit 1
     (( ${+functions[compdef]} )) || exit 1
     [[ $aliases[gemini] == agy ]] || exit 1
-    [[ ":$PATH:" == *":$HOME/.local/share/mise/shims:"* ]] || exit 1
+    [[ -o histfcntllock && ! -o extendedhistory && ! -o histexpiredupsfirst ]] || exit 1
   '
 
 cat >"$test_root/hook" <<'STUB'
@@ -54,11 +60,11 @@ typeset -g DOTFILES_OMZ=1
 STUB
 cat >"$test_root/full/.zshrc.local" <<'STUB'
 [[ $DOTFILES_FZF == 1 && $DOTFILES_DIRENV == 1 ]] || exit 1
+[[ $DOTFILES_AUTOSUGGEST == 1 && $DOTFILES_HIGHLIGHT == 1 ]] || exit 1
 alias gemini=local-override
 typeset -g DOTFILES_LOCAL=1
 STUB
 cat >"$plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" <<'STUB'
-[[ $DOTFILES_LOCAL == 1 ]] || exit 1
 [[ "${(j: :)ZSH_AUTOSUGGEST_STRATEGY}" == 'history completion' ]] || exit 1
 typeset -g DOTFILES_AUTOSUGGEST=1
 STUB

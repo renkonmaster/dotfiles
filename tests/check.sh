@@ -9,7 +9,7 @@ for check in "$repo_root"/tests/check-*.sh; do
 done
 
 printf 'running shellcheck\n'
-shellcheck "$repo_root"/tests/*.sh
+shellcheck "$repo_root"/tests/*.sh "$repo_root"/scripts/*.sh
 
 printf 'checking shell syntax\n'
 for file in "$repo_root"/home/.zshenv "$repo_root"/home/.zprofile \

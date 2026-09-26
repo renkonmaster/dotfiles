@@ -10,7 +10,7 @@ if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)"
 fi
 
-export ZSH="$HOME/.local/share/dotfiles/oh-my-zsh"
+export ZSH="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/oh-my-zsh"
 export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"
 ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$ZSH_VERSION"
 mkdir -p "$ZSH_CACHE_DIR"
@@ -30,24 +30,26 @@ fi
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=10000
 SAVEHIST=20000
-setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS
+setopt HIST_FCNTL_LOCK HIST_IGNORE_ALL_DUPS HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+setopt SHARE_HISTORY HIST_REDUCE_BLANKS
+unsetopt APPEND_HISTORY EXTENDED_HISTORY HIST_EXPIRE_DUPS_FIRST
+unsetopt HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
 
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 source "$__dotfiles_root/home/.aliases"
 
-source "$__dotfiles_root/config/zsh/init.zsh"
-
-[[ ! -r "$HOME/.zsh_aliases" ]] || source "$HOME/.zsh_aliases"
-[[ ! -r "$HOME/.zshrc.local" ]] || source "$HOME/.zshrc.local"
-
-# Load widget integrations after completion and local key bindings.
-__dotfiles_plugins="$HOME/.local/share/dotfiles"
+# Load plugins before tool integrations and the final local overrides.
+__dotfiles_plugins="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles"
 if [[ -r "$__dotfiles_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
     source "$__dotfiles_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
 if [[ -r "$__dotfiles_plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh" ]]; then
     source "$__dotfiles_plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
 fi
+source "$__dotfiles_root/config/zsh/init.zsh"
+
+[[ ! -r "$HOME/.zsh_aliases" ]] || source "$HOME/.zsh_aliases"
+[[ ! -r "$HOME/.zshrc.local" ]] || source "$HOME/.zshrc.local"
 unset __dotfiles_plugins __dotfiles_root

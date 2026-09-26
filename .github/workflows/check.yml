@@ -1,7 +1,9 @@
 name: check
 
-# Migration is deliberately unverified; run only when explicitly requested.
 on:
+  pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
