@@ -9,7 +9,8 @@ if [ ! -t 0 ]; then
 fi
 
 repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-zsh_bin=$(command -v zsh)
+# Match the supported Ubuntu shell and its distribution-owned function files.
+zsh_bin=/usr/bin/zsh
 test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT HUP INT TERM
 
@@ -18,6 +19,12 @@ for profile in minimal full; do
   for file in .zshenv .zprofile .zshrc; do
     ln -s "$repo_root/home/$file" "$test_root/$profile/$file"
   done
+  # HOME/PATH isolation does not change Zsh's compiled-in fpath. CI images
+  # can have group-writable /usr/local completion directories, which compaudit
+  # correctly rejects. Isolate lookup paths; do not disable the security check.
+  cat >"$test_root/$profile/.zshenv.local" <<'ZSH'
+fpath=(/usr/share/zsh/functions/*(N/) /usr/share/zsh/functions/Completion/*(N/))
+ZSH
 done
 
 # No plugins or user-installed commands: completion and history still work.
@@ -26,6 +33,7 @@ env -i HOME="$test_root/minimal" PATH=/usr/bin:/bin TERM=dumb \
     [[ $HISTSIZE == 10000 && $SAVEHIST == 20000 ]] || exit 1
     [[ -o sharehistory && -o histignorealldups && -o histignorespace ]] || exit 1
     (( ${+functions[compdef]} )) || exit 1
+    [[ -z $(compaudit) ]] || exit 1
     [[ $aliases[gemini] == agy ]] || exit 1
     [[ -o histfcntllock && ! -o extendedhistory && ! -o histexpiredupsfirst ]] || exit 1
   '
