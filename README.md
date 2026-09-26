@@ -70,7 +70,7 @@ Python アイコンや区切り、eza（`ls`・`ll`）のファイルアイコ�
 | 利用環境 | インストール・設定する場所 |
 | --- | --- |
 | Windows Terminal から WSL2 を利用 | Windows に導入し、Windows Terminal の対象プロファイルで選択 |
-| VS Code の統合ターミナル（WSL・Remote SSH を含む） | ローカル OS に導入し、VS Code の `terminal.integrated.fontFamily` に設定 |
+| エディターの統合ターミナル | ローカル OS に導入し、統合ターミナルのフォント設定で選択 |
 | SSH 接続 | 接続元 PC に導入し、接続に使うターミナルで選択 |
 | Linux デスクトップのターミナル | Linux 側に導入し、そのターミナルで選択 |
 
@@ -127,18 +127,8 @@ zsh の起動ファイルはホーム直下です。別の `ZDOTDIR` はこの�
 ## 検証
 
 `mise run check` は隔離 HOME で、リンクの退避・再実行、zsh の履歴設定・
-プラグインとローカル設定の読み込み順を確認します。検証用の jq・ripgrep・
+プラグインとローカル設定の読み込み順を確認します。検証用の ripgrep・
 ShellCheck・Starship は mise が導入します。zsh と Git は OS 側のものを使います。
 実プラグインを含むセットアップの確認は `mise run integration` で行えます。
 これは一時 HOME に CLI をダウンロードするため時間とディスク容量が必要です。
 GitHub Actions は PR・main 更新時に `check` を実行します。
-
-## VS Code
-
-Windows 側の設定・キーバインド・スニペットは `vscode/Laptop-win/` にあります。
-PowerShell から拡張機能を適用する場合：
-
-```powershell
-Get-Content .\vscode\Laptop-win\extensions.txt |
-  ForEach-Object { code --install-extension $_ }
-```
