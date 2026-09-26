@@ -6,16 +6,41 @@ Nix / Home Manager は不要です。mise 2026.6.1 の通常のタスク機能�
 
 ## 初回セットアップ
 
-zsh、Git、curl、ビルドに必要な OS パッケージを先に用意します。
-Ubuntu / WSL2 では次のとおりです。
+現時点では `mise run setup` だけで新しい端末の準備がすべて完了するわけでは
+ありません。OS パッケージの導入と、表示に使うフォントの導入・選択は自動化
+できていないため、以下に手動の工程として記載しています。
+
+### 1. OS 側のツールを導入する
+
+Ubuntu / WSL2 のターミナルで実行します。WSL2 の場合は Ubuntu 側の操作です。
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y zsh git curl ca-certificates build-essential pkg-config libssl-dev
+sudo apt-get install -y zsh git curl ca-certificates
 ```
 
+`build-essential`、`pkg-config`、`libssl-dev` は、すべての利用者に一律で必要な
+dotfiles の前提条件ではありません。C/C++ のコンパイルや、ネイティブ依存を
+含む Rust・Python パッケージなどのビルドで必要になる開発用パッケージです。
+そのような開発を行う場合は、対象プロジェクトの要件に合わせて導入します。
+たとえば C/C++ のビルド環境と OpenSSL の開発ファイルが必要な場合：
+
+```sh
+sudo apt-get install -y build-essential pkg-config libssl-dev
+```
+
+これらの OS パッケージは mise の管理対象ではなく、更新も apt 側で行います。
+
+### 2. mise と dotfiles を導入する
+
 [mise の公式手順](https://mise.jdx.dev/getting-started.html)で mise 本体を導入し、
-`~/.local/bin` を PATH に追加してください。リポジトリを clone した後、その直下で：
+`~/.local/bin` を PATH に追加してください。
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+リポジトリを clone した後、その直下で：
 
 ```sh
 mise trust
@@ -26,6 +51,33 @@ CLI → zsh プラグイン → 設定ファイルのリンクの順に導入し
 既存の設定は `.pre-mise` を付けて退避します（壊れたリンクも対象）。
 バックアップが衝突する場合はリンクを変更せず停止します。再実行は可能です。
 ホームへリンクするため、このチェックアウトは移動・削除せず残してください。
+
+### 3. 表示用フォントを導入し、ターミナルで選択する
+
+現在の表示設定は **Nerd Fonts 対応フォント**を使います。Starship の OS・Git・
+Python アイコンや区切り、eza（`ls`・`ll`）のファイルアイコンが対象です。
+フォントが未導入、またはターミナルで未選択だと、四角い代替文字や表示崩れが
+生じることがあります。CLI のインストールだけではこの準備は完了しません。
+
+1. [Nerd Fonts の配布ページ](https://www.nerdfonts.com/font-downloads)から、
+   たとえば **FiraCode Nerd Font** をダウンロードし、展開してフォントを
+   インストールします。通常版の Fira Code とは異なります。
+2. 利用するターミナルのフォント設定で、インストールした Nerd Font を選びます。
+3. ターミナルを開き直し、プロンプトと `ls`・`ll` のアイコンを確認します。
+
+フォントを入れるのは、シェルの実行先ではなく **画面を表示する側の OS** です。
+
+| 利用環境 | インストール・設定する場所 |
+| --- | --- |
+| Windows Terminal から WSL2 を利用 | Windows に導入し、Windows Terminal の対象プロファイルで選択 |
+| VS Code の統合ターミナル（WSL・Remote SSH を含む） | ローカル OS に導入し、VS Code の `terminal.integrated.fontFamily` に設定 |
+| SSH 接続 | 接続元 PC に導入し、接続に使うターミナルで選択 |
+| Linux デスクトップのターミナル | Linux 側に導入し、そのターミナルで選択 |
+
+フォントの導入・選択は現在のスクリプトには含まれていません。
+詳しくは [Starship のフォント要件](https://starship.rs/guide/#prerequisites)も参照してください。
+
+### 4. 新しいシェルで確認する
 
 新しいターミナルで確認後、必要なら `chsh -s /usr/bin/zsh` でログインシェルを変えます。
 Home Manager から移行する場合は [移行・復旧手順](docs/mise-migration.md) も参照してください。
