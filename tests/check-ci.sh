@@ -5,7 +5,7 @@ repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 workflow="$repo_root/.github/workflows/check.yml"
 
 uses_lines=$(grep -E '^[[:space:]]+- uses:' "$workflow")
-test "$(printf '%s\n' "$uses_lines" | wc -l)" -eq 2
+test "$(printf '%s\n' "$uses_lines" | wc -l)" -eq 1
 
 if printf '%s\n' "$uses_lines" |
   grep -Ev '@[0-9a-f]{40}[[:space:]]+#[[:space:]]+v[0-9]' >/dev/null

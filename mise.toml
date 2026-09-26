@@ -1,0 +1,29 @@
+# Run from this checkout. Runtime versions live in config/mise/config.toml.
+[tasks.setup]
+description = "Install tools and zsh plugins, then link dotfiles (with backups)"
+run = ["sh scripts/tools.sh install", "sh scripts/plugins.sh", "sh scripts/link.sh"]
+
+[tasks.link]
+description = "Link configuration files; preserve existing files as .pre-mise"
+run = "sh scripts/link.sh"
+
+[tasks.plugins]
+description = "Install the pinned zsh plugins"
+run = "sh scripts/plugins.sh"
+
+[tasks.install]
+description = "Install tools declared in config/mise/config.toml"
+run = "sh scripts/tools.sh install"
+
+[tasks.update]
+description = "Upgrade CLI tools within the configured versions"
+run = "sh scripts/tools.sh upgrade"
+
+[tasks.check]
+description = "Check configuration and isolated shell startup"
+run = "sh tests/check.sh"
+tools = { jq = "latest", ripgrep = "latest", shellcheck = "latest", starship = "latest" }
+
+[tasks.integration]
+description = "Download and test the complete setup in a temporary HOME"
+run = "sh tests/integration.sh"

@@ -1,147 +1,55 @@
-# ~/.zshrc: interactive Zsh configuration managed in dotfiles.
-#
-# Keep machine-specific settings and secrets in ~/.zshrc.local.
-
-# Path to your Oh My Zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
-
-# Disable automatic update prompts for smooth startup
-zstyle ':omz:update' mode disabled
-
-ZSH_THEME=""
-
-ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-
-plugins=(
-	git
-	zsh-autosuggestions
- 	fast-syntax-highlighting
-)
-
-if [[ -r $ZSH/oh-my-zsh.sh ]]; then
-    source "$ZSH/oh-my-zsh.sh"
-fi
-
-# History ---------------------------------------------------------------------
-
-HISTSIZE=10000
-SAVEHIST=20000
-HISTFILE="$HOME/.zsh_history"
-
-setopt SHARE_HISTORY
-setopt HIST_IGNORE_ALL_DUPS
-setopt HIST_REDUCE_BLANKS
-setopt HIST_IGNORE_SPACE
-
-# PATH and tool bootstrap ------------------------------------------------------
-
-__zshrc_path_prepend() {
-    [[ -d $1 ]] || return 0
-
-    case ":${PATH:-}:" in
-        *:"$1":*) ;;
-        *) PATH="$1${PATH:+:$PATH}" ;;
-    esac
-}
-
-# mise and uv install into ~/.local/bin by default. rustup, `go install`, and
-# pnpm keep their upstream user-level binary locations; runtime versions remain
-# the responsibility of mise (Python is intentionally managed by uv).
-__zshrc_path_prepend "$HOME/go/bin"
-__zshrc_path_prepend "$HOME/.cargo/bin"
-
-PNPM_HOME="${PNPM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/pnpm}"
-if [[ -d $PNPM_HOME/bin ]]; then
-    export PNPM_HOME
-    __zshrc_path_prepend "$PNPM_HOME/bin"
-fi
-
-__zshrc_path_prepend "$HOME/bin"
-__zshrc_path_prepend "$HOME/.local/bin"
+# Interactive Zsh configuration. Local overrides belong in ~/.zshrc.local.
+# Resolve the source file, including when ~/.zshrc is a symlink to this checkout.
+typeset -g __dotfiles_root=${${(%):-%x}:A:h:h}
+typeset -U path PATH
+path=("$HOME/.local/bin" "$HOME/bin" "$HOME/.cargo/bin" $path)
 export PATH
 
-# Keep the existing standalone Google Cloud SDK installation portable.
-__zshrc_gcloud_dir="$HOME/develop/mcp/google-cloud-sdk"
-if [[ -r $__zshrc_gcloud_dir/path.zsh.inc ]]; then
-    source "$__zshrc_gcloud_dir/path.zsh.inc"
+# Activate once in every new shell, even if MISE_SHELL was inherited.
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh)"
 fi
 
-# Aliases ---------------------------------------------------------------------
+export ZSH="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/oh-my-zsh"
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"
+ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$ZSH_VERSION"
+mkdir -p "$ZSH_CACHE_DIR"
+zstyle ':omz:update' mode disabled
+ZSH_THEME=""
+plugins=(git)
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
-if command -v dircolors >/dev/null 2>&1; then
-    if [[ -r $HOME/.dircolors ]]; then
-        eval "$(dircolors -b "$HOME/.dircolors")"
-    else
-        eval "$(dircolors -b)"
-    fi
-
-    alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
+source "$__dotfiles_root/config/zsh/pre-compinit.zsh"
+if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
+    source "$ZSH/oh-my-zsh.sh"
+else
+    autoload -Uz compinit
+    compinit -d "$ZSH_COMPDUMP"
 fi
+
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=20000
+setopt HIST_FCNTL_LOCK HIST_IGNORE_ALL_DUPS HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+setopt SHARE_HISTORY HIST_REDUCE_BLANKS
+unsetopt APPEND_HISTORY EXTENDED_HISTORY HIST_EXPIRE_DUPS_FIRST
+unsetopt HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
 
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
+source "$__dotfiles_root/home/.aliases"
 
-if command -v clip.exe >/dev/null 2>&1; then
-    alias clip='clip.exe'
-elif command -v wl-copy >/dev/null 2>&1; then
-    alias clip='wl-copy'
-elif command -v xsel >/dev/null 2>&1; then
-    alias clip='xsel --clipboard --input'
+# Load plugins before tool integrations and the final local overrides.
+__dotfiles_plugins="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles"
+if [[ -r "$__dotfiles_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    source "$__dotfiles_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
-
-if [[ -r $HOME/.aliases ]]; then
-    source "$HOME/.aliases"
+if [[ -r "$__dotfiles_plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh" ]]; then
+    source "$__dotfiles_plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
 fi
-if [[ -r $HOME/.zsh_aliases ]]; then
-    source "$HOME/.zsh_aliases"
-fi
+source "$__dotfiles_root/config/zsh/init.zsh"
 
-# Completion and tool hooks ---------------------------------------------------
-
-# Activate mise only for interactive shells.
-if [[ ${MISE_SHELL:-} != zsh ]] && command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh)"
-fi
-
-# fzf integration
-if command -v fzf >/dev/null 2>&1; then
-    if __zshrc_fzf_init=$(fzf --zsh 2>/dev/null); then
-        eval "$__zshrc_fzf_init"
-    else
-        if [[ -r /usr/share/doc/fzf/examples/completion.zsh ]]; then
-            source /usr/share/doc/fzf/examples/completion.zsh
-        fi
-        if [[ -r /usr/share/doc/fzf/examples/key-bindings.zsh ]]; then
-            source /usr/share/doc/fzf/examples/key-bindings.zsh
-        fi
-    fi
-    unset __zshrc_fzf_init
-fi
-
-if command -v zoxide >/dev/null 2>&1; then
-    eval "$(zoxide init zsh)"
-fi
-
-if command -v starship >/dev/null 2>&1; then
-    eval "$(starship init zsh)"
-fi
-
-
-if [[ -r $__zshrc_gcloud_dir/completion.zsh.inc ]]; then
-    source "$__zshrc_gcloud_dir/completion.zsh.inc"
-fi
-unset __zshrc_gcloud_dir
-
-# direnv asks to be initialized after other prompt hooks.
-if command -v direnv >/dev/null 2>&1; then
-    eval "$(direnv hook zsh)"
-fi
-
-# Local overrides are deliberately untracked.
-if [[ -r $HOME/.zshrc.local ]]; then
-    source "$HOME/.zshrc.local"
-fi
-
-unset -f __zshrc_path_prepend
+[[ ! -r "$HOME/.zsh_aliases" ]] || source "$HOME/.zsh_aliases"
+[[ ! -r "$HOME/.zshrc.local" ]] || source "$HOME/.zshrc.local"
+unset __dotfiles_plugins __dotfiles_root

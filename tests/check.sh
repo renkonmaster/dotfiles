@@ -9,10 +9,11 @@ for check in "$repo_root"/tests/check-*.sh; do
 done
 
 printf 'running shellcheck\n'
-shellcheck "$repo_root"/tests/*.sh
+shellcheck "$repo_root"/tests/*.sh "$repo_root"/scripts/*.sh
 
-printf 'running statix\n'
-statix check "$repo_root"
-
-printf 'running deadnix\n'
-deadnix --fail "$repo_root"
+printf 'checking shell syntax\n'
+for file in "$repo_root"/home/.zshenv "$repo_root"/home/.zprofile \
+  "$repo_root"/home/.zshrc "$repo_root"/config/zsh/*.zsh; do
+  zsh -n "$file"
+done
+bash -n "$repo_root/home/.bashrc"
